@@ -1,0 +1,108 @@
+<meta charset="UTF-8"/>
+<style type="text/css">
+    .myData .layui-form-item {
+        margin: 20px 100px 10px 45px;
+    }
+
+    .myData .layui-form-label {
+        width: 85px;
+    }
+
+    .layui-input-block {
+        margin-left: 120px;
+    }
+</style>
+<form class="layui-form myData" action="save" method="post" lay-filter="stuform">
+    <input type="hidden" name="id" data-th-value="${model.id}"/>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">上级部门：</label>
+        <div class="layui-input-block">
+            <input type="text" name="parentId" id="tree" lay-filter="tree" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">部门名称：</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" lay-verify="required" th:value="${model.name}" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">部门负责人：</label>
+        <div class="layui-input-block">
+            <input type="text" name="deptName" th:value="${model.deptName}" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">电话：</label>
+        <div class="layui-input-block">
+            <input type="text" name="phone" th:value="${model.phone}" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">编号：</label>
+        <div class="layui-input-block">
+            <input type="text" name="number" th:value="${model.number}" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">排序：</label>
+        <div class="layui-input-block">
+            <input type="text" name="idx" value="0" th:value="${model.idx}" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label"></label>
+        <div class="layui-input-block">
+            <button lay-submit class="layui-btn layui-btn-radius layui-btn-normal" lay-filter="btnSub">
+                <i class="layui-icon">&#xe642;</i>修改并保存
+            </button>
+        </div>
+    </div>
+</form>
+
+<script th:inline="javascript">
+    layui.use(["treeSelect", "form", "tree"], function () {
+        var form = layui.form;
+        var tree = layui.tree;
+        form.render('select');
+        var treeSelect = layui.treeSelect;
+        treeSelect.render({
+            // 选择器
+            elem: '#tree',
+            // 数据
+            data: 'dept/treeSelect?id=' + [[${model.id==null ? 0 : model.id}]],
+            // 异步加载方式：get/post，默认get
+            type: 'post',
+            // 占位符
+            placeholder: '上级菜单',
+            // 是否开启搜索功能：true/false，默认false
+            search: true,
+            // 一些可定制的样式
+            style: {
+                folder: {
+                    enable: true
+                },
+                line: {
+                    enable: true
+                }
+            },
+            // 加载完成后的回调函数
+            success: function (d) {
+                // 选中节点，根据id筛选
+                treeSelect.checkNode('tree', [[${model.parent == null? parentId: model.parent.id}]]);
+                treeSelect.refresh('tree');
+            }
+        });
+
+        form.on('submit(btnSub)', function (data) {
+            $.post('dept/save', data.field, function (result) {
+                if (result.success) {
+                    tree.reload('treeId', {data: getData()});
+                }
+                layer.msg(result.msg, {offset: 'rb'});
+            });
+            return false;
+        });
+    });
+</script>

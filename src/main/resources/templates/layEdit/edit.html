@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+
+<style type="text/css">
+    #layEditHome {
+        padding: 0 20px;
+    }
+
+    #layEditHome .layui-inline {
+        width: 45%;
+        margin-top: 20px;
+    }
+</style>
+<div id="layEditHome">
+    <form id="myForm" action="save" method="post" class="layui-form white-bg radius">
+        <input type="hidden" name="id" id="id" th:value="${model.id}">
+        <input type="hidden" name="creatdate" id="creatdate" th:value="${model.creatdate}">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">标题</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" name="title" th:value="${model.title}">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">发布人</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" name="name" th:value="${model.name}">
+                </div>
+            </div>
+        </div>
+        <textarea id="lay_edit" lay-verify="content" name="text" th:text="${model.text}"></textarea>
+    </form>
+</div>
+<script>
+    layui.use(['layedit', 'form'], function () {
+        var form = layui.form;
+        var layedit = layui.layedit;
+        layedit.set({	//设置图片接口
+            uploadImage: {
+                url: 'layEdit/upload', //接口url
+                type: 'post'
+            }
+        });
+        //创建一个编辑器
+        var index = layedit.build('lay_edit', {
+            height: 350
+        });
+        //提交时把值同步到文本域中
+        form.verify({
+            //content富文本域中的lay-verify值
+            content: function (value) {
+                return layedit.sync(index);
+            }
+        });
+    });
+</script>

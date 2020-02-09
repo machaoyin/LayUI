@@ -1,0 +1,145 @@
+<meta charset="UTF-8"/>
+
+<table class="layui-hide" id="menu" lay-filter="menu"></table>
+
+<script type="text/javascript">
+    layui.use(['treetable', 'table', 'layer'], function () {
+        var table = layui.table;
+        var layer = layui.layer;
+        var treetable = layui.treetable;
+        //渲染表格
+        var renderTable = function () {
+            layer.load(2);  //加载层
+            treetable.render({
+                height: 'full-160',
+                id: 'menu',
+                treeColIndex: 1,	//树形图标显示在第几列
+                treeSpid: '0',		//最上级的父级id
+                treeIdName: 'id',	//id字段的名称
+                treePidName: 'parentId',	//pid字段的名称，父级菜单id
+                treeDefaultClose: false,	//是否默认折叠
+                treeLinkage: false,		//父级展开时是否自动展开所有子级
+                elem: '#menu',	//表格id
+                url: 'menu/treedata',
+                toolbar: '#toolbarDemo',
+                page: false,
+                cols: [ [
+                    {type: 'radio'},
+                    {field: 'name', title: '菜单名称'},
+                    {field: 'url', title: '地址'},
+                    {field: 'icon', hide: true, title: '图标'},
+                    {field: 'idx', title: '排序'}
+                ] ],
+                //数据渲染完的回调
+                done: function () {
+                    //关闭加载
+                    layer.closeAll('loading');
+                }
+            })
+        };
+        renderTable();
+
+        table.on('toolbar(menu)', function (obj) {
+            var checkStatus = table.checkStatus('menu');
+            var data = checkStatus.data;
+            if (obj.event === 'add') {
+                var parentId = data.length == 0 ? 0 : data[0].id;
+                $.get('menu/edit', {parentId: parentId}, function (data) {
+                    layer.open({
+                        type: 1,
+                        title: '新增',
+                        area: ['530px'],
+                        content: data,
+                        btn: ['提交', '退出'],
+                        yes: function () {
+                        },
+                        success: function (layero, index) {
+                            layui.use('form', function () {
+                                var form = layui.form;
+                                layero.addClass('layui-form');
+                                var submitBtn = layero.find('.layui-layer-btn0');
+                                submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                layero.keydown(function (e) {
+                                    if (e.keyCode == 13) {
+                                        submitBtn.click();
+                                    }
+                                });
+
+                                form.on('submit(formVerify)', function (data) {
+                                    $.post('menu/save', data.field, function (result) {
+                                        if (result.success) {
+                                            layer.close(index);
+                                            //刷新，重新渲染表格
+                                            renderTable();
+                                        }
+                                        layer.msg(result.msg, {offset: 'rb'});
+                                    });
+                                    return false;
+                                });
+                            });
+                        }
+                    })
+                })
+            } else if (obj.event === 'updata') {
+                if (data.length != 1) {
+                    layer.msg("请选择一行进行编辑", {offset: 'rb'});
+                } else {
+                    var id = data[0].id;
+                    $.get('menu/edit', {id: id}, function (data) {
+                        layer.open({
+                            type: 1,
+                            title: '修改',
+                            area: ['530px'],
+                            content: data,
+                            btn: ['提交', '退出'],
+                            yes: function () {
+                            },
+                            success: function (layero, index) {
+                                layui.use('form', function () {
+                                    var form = layui.form;
+                                    layero.addClass('layui-form');
+                                    var submitBtn = layero.find('.layui-layer-btn0');
+                                    submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                    layero.keydown(function (e) {
+                                        if (e.keyCode == 13) {
+                                            submitBtn.click();
+                                        }
+                                    });
+
+                                    form.on('submit(formVerify)', function (data) {
+                                        $.post('menu/save', data.field, function (result) {
+                                            if (result.success) {
+                                                layer.close(index);
+                                                //刷新，重新渲染表格
+                                                renderTable();
+                                            }
+                                            layer.msg(result.msg, {offset: 'rb'});
+                                        });
+                                        return false;
+                                    });
+                                });
+                            }
+                        })
+                    })
+                }
+            } else if (obj.event === "delete") {
+                if (data.length != 1) {
+                    layer.msg("请选择一行进行删除", {offset: 'rb'});
+                } else {
+                    var id = data[0].id;
+                    layer.confirm('确定删除选定行的数据吗?', function (index) {
+                        $.post('menu/delete', {id: id}, function (result) {
+                            if (result.success) {
+                                layer.close(index);
+                                renderTable();
+                            }
+                            layer.msg(result.msg, {offset: 'rb'});
+                        });
+                    });
+                }
+            } else if (obj.event === "refresh") {
+                renderTable();
+            }
+        })
+    })
+</script>

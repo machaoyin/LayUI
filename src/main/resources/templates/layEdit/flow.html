@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+
+<style type="text/css">
+    .flow_li {
+        height: 60px;
+        line-height: 60px;
+        border: 1px solid #5FB878;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div id="flow_home">
+    <ul id="flow_deom"></ul>
+</div>
+
+<script type="text/javascript">
+    layui.use('flow', function () {
+        var flow = layui.flow;
+        flow.load({
+            elem: '#flow_deom',     //流加载容器
+            //scrollElem: '#flow_home',   //滚动条所在元素，一般不用填
+            done: function (page, next) {     //执行下一页的回调
+                //模拟数据插入
+                setTimeout(function () {
+                    var lis = [];
+                    //数据请求地址，page，第几页，默认page是从2开始返回
+                    $.post('layEdit/flowPage', {page: page}, function (res) {
+                        layui.each(res.data, function (index, item) {
+                            //执行下一页渲染，第二参数为：满足“加载更多”的条件，即后面仍有分页
+                            //流加载插入内容部分，根据自己需求更改，这里做的案例，所以就写的比较简单
+                            lis.push("<li class='flow_li'>" + item.title + "</li>");
+                        });
+                        //pages为Ajax返回的总页数，只有当前页小于总页数的情况下，才会继续出现加载更多
+                        next(lis.join(''), page < res.pages);
+                    });
+                });
+            }
+        });
+    });
+</script>

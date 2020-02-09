@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+
+<form class="layui-form" action="save" id="myForm" method="post" lay-filter="stuform">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">班级：</label>
+            <div class="layui-input-inline">
+                <input type="text" name="teahcerName" class="layui-input"/>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">姓名：</label>
+            <div class="layui-input-inline">
+                <input type="text" name="name" class="layui-input"/>
+            </div>
+        </div>
+
+        <div class="layui-inline">
+            <button type="button" class="layui-btn layui-btn-radius layui-btn-normal" onclick="search()">
+                <i class="layui-icon">&#xe615;</i>查询
+            </button>
+            <button type="button" class="layui-btn layui-btn-radius layui-btn-normal" onclick="empty()">
+                <i class="layui-icon">&#xe640;</i>清空
+            </button>
+        </div>
+    </div>
+</form>
+
+<table class="layui-hide" id="student" lay-filter="student"></table>
+
+<script type="text/html" id="switchTpl">
+    <input type="checkbox" name="isUsed" value="{{d.id}}" lay-skin="switch" lay-text="是|否" lay-filter="isUsedDemo" {{
+           d.isUsed== 1 ? 'checked' : '' }}>
+</script>
+
+<script type="text/html" id="barDemo">
+    <button class="layui-btn layui-btn-xs" lay-event="updata"><i class="layui-icon">&#xe642;</i>修改</button>
+    <button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete"><i class="layui-icon">&#xe640;</i>删除
+    </button>
+</script>
+
+<script type="text/javascript">
+    var where = {};
+    layui.use(["table", "form"], function () {
+        var that = this;
+        var form = layui.form;
+        var table = layui.table;
+        table.render({
+            elem: '#student',
+            title: '学生管理',
+            url: 'student/page',
+            height: 'full-210',
+            toolbar: '#toolbarDemo',
+            page: true,
+            cols: [ [
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', hide: true, title: 'id'},
+                {field: 'name', title: '姓名'},
+                {field: 'username', title: '用户名'},
+                {
+                    field: 'tbClass', title: '班级',
+                    templet: function (d) {
+                        return d.tbClass ? d.tbClass.name : '';
+                    }
+                },
+                {field: 'grade', title: '成绩', edit: 'text'},
+                {field: 'isUsed', templet: '#switchTpl', title: '是否毕业'},
+                {field: 'relationName', toolbar: '#barDemo', title: '操作'}
+            ] ]
+        });
+
+        table.on('toolbar(student)', function (obj) {
+            var checkStatus = table.checkStatus('student');
+            var data = checkStatus.data;
+            if (obj.event == 'add') {
+                $.post("student/edit", function (data) {
+                    layui.use('layer', function () {
+                        layer.open({
+                            title: '学生管理',
+                            type: 1,
+                            shade: 0.3,
+                            maxmin: true,
+                            content: data,
+                            area: ['500px'],
+                            btn: ['确定', '取消'],
+                            yes: function () {	//虚拟化表单参数类型不是json，所以这里用的是回调提交
+                            },
+                            //弹出层打开回调
+                            success: function (layero, index) {
+                                var form = layui.form;
+                                //找到确定按钮，添加属性，变成提交按钮
+                                layero.addClass('layui-form');
+                                var submitBtn = layero.find('.layui-layer-btn0');
+                                submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                layero.keydown(function (e) {
+                                    if (e.keyCode == 13) {
+                                        submitBtn.click();
+                                    }
+                                });
+                                form.on('submit(formVerify)', function (data) {
+                                    $.post("student/save", data.field, function (result) {
+                                        if (result.success) {
+                                            layer.close(index);
+                                            table.reload('student', {where: that.where});
+                                        }
+                                        layer.msg(result.msg, {offset: 'rb'});
+                                    });
+                                });
+                            }
+                        })
+                    })
+                })
+            } else if (obj.event === 'updata') {
+                if (data.length != 1) {
+                    layer.msg('请选择一行进行编辑', {offset: 'rb'});
+                } else {
+                    var id = data[0].id;
+                    $.post("student/edit", {id: id}, function (data) {
+                        layui.use('layer', function () {
+                            layer.open({
+                                title: '学生管理',
+                                type: 1,
+                                shade: 0.3,
+                                maxmin: true,
+                                content: data,
+                                area: ['500px'],
+                                btn: ['确定', '取消'],
+                                yes: function () {
+                                },
+                                success: function (layero, index) {
+                                    var form = layui.form;
+                                    layero.addClass('layui-form');
+                                    var submitBtn = layero.find('.layui-layer-btn0');
+                                    submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                    layero.keydown(function (e) {
+                                        if (e.keyCode == 13) {
+                                            submitBtn.click();
+                                        }
+                                    });
+                                    form.on('submit(formVerify)', function (data) {
+                                        $.post("student/save", data.field, function (result) {
+                                            if (result.success) {
+                                                layer.close(index);
+                                                table.reload('student', {where: that.where});
+                                            }
+                                            layer.msg(result.msg, {offset: 'rb'});
+                                        });
+                                    });
+                                }
+                            })
+                        })
+                    });
+                }
+            } else if (obj.event === "delete") {
+                if (data.length < 1) {
+                    layer.msg('请选择需要删除的行', {offset: 'rb'});
+                } else {
+                    layer.confirm('确定要删除选中的' + data.length + '条数据吗？', function (index) {
+                        var str = "";
+                        for (i = 0; i < data.length; i++) {
+                            str += data[i].id + ",";
+                        }
+                        str = str.substring(0, str.length - 1);
+                        $.post("student/delete1", {ids: str}, function (result) {
+                            table.reload('student', {where: that.where});
+                            layer.close(index);
+                            layer.msg(result.msg, {offset: 'rb'});
+                        });
+                    });
+                }
+            } else if (obj.event === 'refresh') {
+                table.reload('student', {where: that.where});
+            }
+        })
+
+        table.on('tool(student)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'updata') {
+                $.post("student/edit", {id: data.id}, function (data) {
+                    layui.use('layer', function () {
+                        layer.open({
+                            title: '学生管理',
+                            type: 1,
+                            shade: 0.3,
+                            maxmin: true,
+                            content: data,
+                            area: ['500px'],
+                            btn: ['确定', '取消'],
+                            yes: function () {
+                            },
+                            success: function (layero, index) {
+                                var form = layui.form;
+                                layero.addClass('layui-form');
+                                var submitBtn = layero.find('.layui-layer-btn0');
+                                submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                layero.keydown(function (e) {
+                                    if (e.keyCode == 13) {
+                                        submitBtn.click();
+                                    }
+                                });
+                                form.on('submit(formVerify)', function (data) {
+                                    $.post("student/save", data.field, function (result) {
+                                        if (result.success) {
+                                            layer.close(index);
+                                            table.reload('student', {where: that.where});
+                                        }
+                                        layer.msg(result.msg, {offset: 'rb'});
+                                    });
+                                });
+                            }
+                        })
+                    })
+                });
+            } else if (obj.event === 'delete') {
+                layer.confirm('确定要删除吗？', function (index) {
+                    $.post("student/delete", {id: data.id}, function (result) {
+                        table.reload('student', {where: that.where});
+                        layer.close(index);
+                        layer.msg(result.msg, {offset: 'rb'});
+                    });
+                });
+            }
+        });
+
+        table.on('edit(student)', function (obj) {
+            var regPos = /^\d+(\.\d+)?$/; //非负浮点数
+            var regNeg = /^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$/; //负浮点数
+            var val = obj.value == "" ? 0 : obj.value;
+            if (regPos.test(val) || regNeg.test(val)) {
+                $.post('student/updateGrade', {id: obj.data.id, grade: val}, function () {
+                });
+            } else {
+                layer.msg("请输入有效的成绩");
+            }
+        });
+
+        form.on('switch(isUsedDemo)', function (obj) {
+            $.post('student/update', {id: this.value, isUsed: obj.elem.checked}, function () {
+            });
+        });
+    });
+
+    $.fn.serializeObject = function () {
+        var o = {};
+        var a = this.serializeArray();
+        $.each(a, function () {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [o[this.name]];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
+        });
+        return o;
+    };
+
+    function search() {
+        layui.use("table", function () {
+            var table = layui.table;
+            where = $("#myForm").serializeObject();
+            table.reload('student', {where: where});
+        });
+    }
+
+    function empty() {
+        where = "";
+        $("input").val("");
+        layui.use(['form', 'table'], function () {
+            var form = layui.form;
+            var table = layui.table;
+            form.render();
+            table.reload('student', {where: ''});
+        });
+    }
+</script>

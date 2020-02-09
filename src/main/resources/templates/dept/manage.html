@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+
+<style type="text/css">
+    #dept_main, #dept_particulars {
+        width: 48.5%;
+        display: inline-block;
+        vertical-align: top;
+        padding: 20px;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    #dept_tree {
+        margin-top: 20px;
+    }
+</style>
+
+<div id="dept_main" style="margin-right: 2%;">
+    <fieldset class="layui-elem-field layui-field-title">
+        <legend>所有部门</legend>
+    </fieldset>
+    <button class="layui-btn layui-btn-sm layui-btn-radius layui-btn-normal" lay-demo="addDept"><i class="layui-icon">&#xe654;</i>添加部门
+    </button>
+    <button class="layui-btn layui-btn-sm layui-btn-radius layui-btn-normal" lay-demo="gain">获取选中节点</button>
+    <div id="dept_tree">
+
+    </div>
+</div>
+<div id="dept_particulars">
+    <fieldset class="layui-elem-field layui-field-title">
+        <legend>部门详情</legend>
+    </fieldset>
+    <div id="dept_home">
+        <div class="layui-tree-emptyText">无数据</div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    layui.use(['tree', 'util', 'layer'], function () {
+        var tree = layui.tree;
+        var util = layui.util;
+        var layer = layui.layer;
+        tree.render({
+            elem: '#dept_tree',
+            data: getData(),
+            id: 'treeId',
+            showCheckbox: true,     //时候显示复选框
+            onlyIconControl: true,
+            edit: ['add', 'update', 'del'], //操作节点的图标
+            click: function (obj) {
+                var id = obj.data.id;
+                $("#dept_home").load("dept/show?id=" + id);
+            },
+            operate: function (obj) {
+                var type = obj.type; //得到操作类型：add、edit、del
+                var data = obj.data; //得到当前节点的数据
+                var elem = obj.elem; //得到当前节点元素
+
+                var id = data.id;
+                var name = data.title;
+                if (type === 'add') { //增加节点
+                    $.post("dept/save", {parentId: id, name: "未命名"}, function (result) {
+                        tree.reload('treeId', {data: getData()});
+                    })
+                    //返回 key 值
+                    return;
+                } else if (type === 'update') { //修改节点
+                    $.post("dept/update", {id: id, name: name}, function () {
+                        tree.reload('treeId', {data: getData()});
+                    })
+                } else if (type === 'del') { //删除节点
+                    $.post("dept/delete", {id: id}, function () {
+                        tree.reload('treeId', {data: getData()});
+                    });
+                }
+                ;
+            }
+        });
+
+        util.event('lay-demo', {
+            addDept: function (othis) {
+                $.get('dept/edit', function (data) {
+                    layer.open({
+                        type: 1,
+                        title: '新增',
+                        area: ['530px'],
+                        content: data,
+                        btn: ['提交', '退出'],
+                        yes: function () {
+                        },
+                        success: function (layero, index) {
+                            layui.use('form', function () {
+                                var form = layui.form;
+                                layero.addClass('layui-form');
+                                var submitBtn = layero.find('.layui-layer-btn0');
+                                submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                layero.keydown(function (e) {
+                                    if (e.keyCode == 13) {
+                                        submitBtn.click();
+                                    }
+                                });
+
+                                form.on('submit(formVerify)', function (data) {
+                                    $.post('dept/save', data.field, function (result) {
+                                        if (result.success) {
+                                            layer.close(index);
+                                            tree.reload('treeId', {data: getData()});
+                                        }
+                                        layer.msg(result.msg, {offset: 'rb'});
+                                    });
+                                    return false;
+                                });
+                            });
+                        }
+                    })
+                })
+            },
+            gain: function () {
+                var checkData = tree.getChecked('treeId');
+                var str = JSON.stringify(checkData);
+                $.post('dept/checkedGain', {data: str}, function () {
+                });
+                layer.alert(JSON.stringify(checkData), {shade: 0});
+            }
+        });
+    });
+
+    function getData() {
+        var data = [];
+        $.ajax({
+            url: "dept/treeload",    //后台数据请求地址
+            type: "post",
+            async: false,
+            success: function (resut) {
+                data = resut;
+            }
+        });
+        return data;
+    }
+
+</script>
+

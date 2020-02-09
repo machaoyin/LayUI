@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LayUI使用案例</title>
+    <link rel="stylesheet" href="static/layui/css/layui.css">
+    <script src="static/js/jquery.js"></script>
+    <script src="static/layui/layui.js"></script>
+    <style type="text/css">
+        .layui-table-view {
+            background: white;
+        }
+    </style>
+</head>
+<body>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    <div class="layui-header">
+        <div class="layui-logo">LayUI使用案例</div>
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item">
+                <a href="javascript:;">
+                    <img src="http://t.cn/RCzsdCq" class="layui-nav-img">
+                    贤心
+                </a>
+                <dl class="layui-nav-child">
+                    <dd><a href="">退了</a></dd>
+                </dl>
+            </li>
+        </ul>
+    </div>
+
+    <div class="layui-side layui-bg-black">
+        <div class="layui-side-scroll">
+            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+            <ul class="layui-nav layui-nav-tree" lay-filter="test" lay-shrink="all">
+                <li class="layui-nav-item layui-nav-itemed">
+                    <a class="" href="javascript:;">表格案例</a>
+                    <dl class="layui-nav-child">
+                        <dd onclick="pageView('tbClass/manage')"><a href="javascript:;">班级管理</a></dd>
+                        <dd onclick="pageView('student/manage')"><a href="javascript:;">学生管理</a></dd>
+                        <dd onclick="pageView('menu/manage')"><a href="javascript:;">菜单管理</a></dd>
+                        <dd onclick="pageView('dept/manage')"><a href="javascript:;">部门管理</a></dd>
+                    </dl>
+                </li>
+                <li class="layui-nav-item" onclick="pageView('layEdit/manage')"><a href="javascript:;">富文本域案例</a></li>
+                <li class="layui-nav-item" onclick="pageView('layEdit/edit2')"><a href="javascript:;">富文本域案例1</a></li>
+                <li class="layui-nav-item" onclick="pageView('layEdit/flow')"><a href="javascript:;">LayUI流加载案例</a></li>
+                <li class="layui-nav-item" onclick="pageView('system')"><a href="">文件上传</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layui-body" style="background: rgb(240, 242, 245);">
+        <div id="main" style="padding: 15px;">
+
+        </div>
+    </div>
+
+    <div class="layui-footer">
+        © layui.com - 底部固定区域
+    </div>
+</div>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-group">
+        <button class="layui-btn layui-btn-sm" lay-event="add"><i class="layui-icon">&#xe654;</i>新增</button>
+        <button class="layui-btn layui-btn-sm" lay-event="updata"><i class="layui-icon">&#xe642;</i>修改</button>
+        <button class="layui-btn layui-btn-sm" lay-event="delete"><i class="layui-icon">&#xe640;</i>删除</button>
+        <button class="layui-btn layui-btn-sm" lay-event="refresh"><i class="layui-icon">&#xe666;</i>刷新</button>
+    </div>
+</script>
+<script>
+    //JavaScript代码区域
+    layui.use('element', function () {
+        var element = layui.element;
+    });
+
+    function pageView(url) {
+        layui.use('jquery', function () {
+            var $ = layui.jquery;
+            $("#main").load(url);
+        });
+    }
+
+    layui.config({
+        base: 'static/layui/'
+    }).extend({
+        treetable: 'treetable-lay/treetable'
+    });
+</script>
+</body>
+</html>

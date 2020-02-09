@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+
+<form class="layui-form" id="myForm" lay-filter="stuform">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">文章标题：</label>
+            <div class="layui-input-inline">
+                <input type="text" name="title" class="layui-input"/>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <label class="layui-form-label">发布人：</label>
+            <div class="layui-input-inline">
+                <input type="text" name="name" class="layui-input"/>
+            </div>
+        </div>
+
+        <div class="layui-inline">
+            <button type="button" class="layui-btn layui-btn-radius layui-btn-normal" onclick="search()">
+                <i class="layui-icon">&#xe615;</i>查询
+            </button>
+            <button type="button" class="layui-btn layui-btn-radius layui-btn-normal" onclick="empty()">
+                <i class="layui-icon">&#xe640;</i>清空
+            </button>
+        </div>
+    </div>
+</form>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="visit"><i class="layui-icon">&#xe609;</i>访问</a>
+</script>
+
+<table class="layui-hide" id="layEdit" lay-filter="layEdit"></table>
+
+<script type="text/javascript">
+    var where = {};
+    layui.use("table", function () {
+        var that = this;
+        var table = layui.table;
+        table.render({
+            elem: '#layEdit',
+            title: '班级管理',
+            url: 'layEdit/page',
+            height: 'full-210',
+            toolbar: '#toolbarDemo',
+            page: true,
+            cols: [ [
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', title: 'id'},
+                {field: 'title', title: '文章标题'},
+                {field: 'creatdate', title: '发布时间'},
+                {field: 'name', title: '发布人'},
+                {fixed: 'right', title: '操作', toolbar: '#barDemo'}
+            ] ]
+        });
+
+        table.on('toolbar(layEdit)', function (obj) {
+            var checkStatus = table.checkStatus('layEdit');
+            var data = checkStatus.data;
+            if (obj.event == 'add') {
+                $.post("layEdit/edit", function (data) {
+                    layui.use('layer', function () {
+                        layer.open({
+                            title: '文章管理',
+                            type: 1,
+                            shade: 0.3,
+                            maxmin: true,
+                            content: data,
+                            area: ['75%', '70%'],
+                            btn: ['确定', '取消'],
+                            yes: function () {	//虚拟化表单参数类型不是json，所以这里用的是回调提交
+                            },
+                            //弹出层打开回调
+                            success: function (layero, index) {
+                                var form = layui.form;
+                                //找到确定按钮，添加属性，变成提交按钮
+                                layero.addClass('layui-form');
+                                var submitBtn = layero.find('.layui-layer-btn0');
+                                submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                layero.keydown(function (e) {
+                                    if (e.keyCode == 13) {
+                                        submitBtn.click();
+                                    }
+                                });
+                                form.on('submit(formVerify)', function (data) {
+                                    $.post("layEdit/save", data.field, function (result) {
+                                        if (result.success) {
+                                            layer.close(index);
+                                            table.reload('layEdit', {where: that.where});
+                                        }
+                                        layer.msg(result.msg, {offset: 'rb'});
+                                    });
+                                });
+                            }
+                        })
+                    })
+                })
+            } else if (obj.event === 'updata') {
+                if (data.length != 1) {
+                    layer.msg('请选择一行进行编辑', {offset: 'rb'});
+                } else {
+                    var id = data[0].id;
+                    $.post("layEdit/edit", {id: id}, function (data) {
+                        layui.use('layer', function () {
+                            layer.open({
+                                title: '班级管理',
+                                type: 1,
+                                shade: 0.3,
+                                maxmin: true,
+                                content: data,
+                                area: ['75%', '70%'],
+                                btn: ['确定', '取消'],
+                                yes: function () {
+                                },
+                                success: function (layero, index) {
+                                    var form = layui.form;
+                                    layero.addClass('layui-form');
+                                    var submitBtn = layero.find('.layui-layer-btn0');
+                                    submitBtn.attr('lay-filter', 'formVerify').attr('lay-submit', '');
+                                    layero.keydown(function (e) {
+                                        if (e.keyCode == 13) {
+                                            submitBtn.click();
+                                        }
+                                    });
+                                    form.on('submit(formVerify)', function (data) {
+                                        $.post("layEdit/save", data.field, function (result) {
+                                            if (result.success) {
+                                                layer.close(index);
+                                                table.reload('layEdit', {where: that.where});
+                                            }
+                                            layer.msg(result.msg, {offset: 'rb'});
+                                        });
+                                    });
+                                }
+                            })
+                        })
+                    });
+                }
+            } else if (obj.event === "delete") {
+                if (data.length < 1) {
+                    layer.msg('请选择需要删除的行', {offset: 'rb'});
+                } else {
+                    layer.confirm('确定要删除选中的' + data.length + '条数据吗？', function (index) {
+                        var str = "";
+                        for (i = 0; i < data.length; i++) {
+                            str += data[i].id + ",";
+                        }
+                        str = str.substring(0, str.length - 1);
+                        $.post("layEdit/delete1", {ids: str}, function (result) {
+                            table.reload('layEdit', {where: that.where});
+                            layer.close(index);
+                            layer.msg(result.msg, {offset: 'rb'});
+                        });
+                    });
+                }
+            } else if (obj.event === 'refresh') {
+                table.reload('layEdit', {where: that.where});
+            }
+        })
+
+        table.on('tool(layEdit)', function (obj) {
+            var id = obj.data.id;
+            if (obj.event === 'visit') {
+                window.open("layEdit/visit?id=" + id);
+            }
+        });
+    });
+
+    $.fn.serializeObject = function () {
+        var o = {};
+        var a = this.serializeArray();
+        $.each(a, function () {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [o[this.name]];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
+        });
+        return o;
+    };
+
+    function search() {
+        layui.use("table", function () {
+            var table = layui.table;
+            where = $("#myForm").serializeObject();
+            table.reload('layEdit', {where: where});
+        });
+    }
+
+    function empty() {
+        where = "";
+        $("input").val("");
+        layui.use(['form', 'table'], function () {
+            var form = layui.form;
+            var table = layui.table;
+            form.render();
+            table.reload('layEdit', {where: ''});
+        });
+    }
+</script>
