@@ -1,0 +1,72 @@
+<meta charset="UTF-8">
+<style type="text/css">
+    #imgSave, #imgsSave{
+        width: 80px;
+        margin: 5px 0px 50px 0px;
+    }
+</style>
+<div class="layui-upload-drag" id="ongImg">
+    <i class="layui-icon"></i>
+    <p>点击上传，或将文件拖拽到此处</p>
+</div><br>
+<button type="button" class="layui-btn layui-btn-radius layui-btn-normal" id="imgSave">上传</button>
+
+<div class="layui-upload">
+    <button type="button" class="layui-btn" id="imgs">多图片上传</button>
+    <blockquote class="layui-elem-quote layui-quote-nm" style="margin-top: 10px;">
+        预览图：
+        <div class="layui-upload-list" id="imgsShow"></div>
+    </blockquote>
+</div>
+
+<script type="text/javascript">
+    var files;
+    layui.use('upload', function() {
+        var upload = layui.upload;
+        //多图片上传
+        upload.render({
+            elem: '#imgs',
+            accept: 'images',   //指定允许上传的文件类型
+            url: 'imgSave', //改成您自己的上传接口
+            multiple: true, //是否允许多文件上传
+            //选择文件后的回调函数
+            choose: function(obj){
+                //预读本地文件示例，
+                obj.preview(function(index, file, result){
+                    $('#imgsShow').append('<img src="'+ result +'" alt="'+ file.name +'" width="200px;">')
+                });
+            },
+            done: function(res){
+                //上传完毕
+            }
+        });
+
+        //拖拽上传
+        upload.render({
+            elem: '#ongImg',
+            url: 'imgSave',
+            auto: false,    //是否自动上传
+            accept: 'images',   //指定允许上传的文件类型
+            bindAction: '#imgSave',  //指向一个按钮触发上传
+            //选择文件后的回调函数
+            choose: function(obj){
+                //将每次选择的文件追加到文件队列
+                var files = obj.pushFile();
+                //预读本地文件，如果是多文件，则会遍历。
+                obj.preview(function(index, file, result){
+                    console.log(index); //得到文件索引
+                    console.log(file); //得到文件对象
+                    console.log(result); //得到文件base64编码，比如图片
+                    //图片插入到选择框中，
+                    $("#ongImg").html("<img src = '"+result+"' width='200px;' />");
+                });
+            },
+            //上传完成后回调，res为服务器端返回的数据
+            done: function(res){
+                //关闭loading
+                layer.close(index);
+            }
+        });
+    });
+
+</script>
